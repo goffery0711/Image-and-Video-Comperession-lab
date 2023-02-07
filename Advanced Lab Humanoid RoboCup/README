@@ -1,0 +1,66 @@
+--- preprocess images found on the internet (in Test file) ---
+
+This file is a prototype of preprocessing, it is used to generate training images for CNN training
+Note: Test file contains images found on https://github.com/szemenyeim/ROBO test (traning to big, I dont want to download that)
+
+ scanlines4.py - the most up-to-date file for drawing bounding box around robot candidates
+               - set these parameters:
+                    test_l: list of image indices to be processed
+                    save_txt: 1 for save, 0 for not save
+                    plot: 1 for plot, 0 for not plot
+                    note: plot border points, border lines, and candidates bounding box
+                          there are commented lines, that plots sub steps of preprocessing.
+
+--- cut robot candidates ---
+
+Once scanlines4.py produces bounding boxes it has to be cut and manually sorted into robot file and non robot file for
+CNN training
+
+ cut_robot_candidate.py  - reads from candidate.txt, original images from Test file,
+                           cuts the bounding boxes, and saves it as an image in Cutted_img
+
+
+--- build CNN model ---
+
+Training data for CNN are in the file TrainSet
+you need both enemy_detector.py and cnn_enemy_detector.py to run
+
+ enemy_detector.py - builds CNN and runs training and testing
+                   - set these parameters:
+                        train: if training wanted set to 1 else 0
+                        test: if test wanted set to 1 else 0
+                        model_save: if model after training should be saved set to 1
+                        new_size: CNN input image dimension
+                        epoch: epoch
+                        color: false for grey img, true for color model
+
+                        cnn_filter: list of convolutional filters, e.g. [8, 16, 32]
+                        fc_filter: list of fully connected layers, output should be 1 e.g. [64, 1]
+                        cnn_file: path to saved model, e.g. 'h5_files/' + 'cnn_1C_BN_[16]_[16_1]_mean_norm'
+                        num: model num, will be appended to model name, e.g. 1
+                        batch_num: divide training set into batches, since we dont have that many images 1 batch is ok
+
+ cnn_enemy_detector.py  - The CNN is defined in cnn_enemy_detector, its written as a class and creates a CNN object
+                        - no need to change this, unless you want to change layers, e.g. add/remove Dropout
+
+--- create inference pb file to be used on NAO with OpenCV ---
+
+If you have a h5 model file, run this to obtain file that work on NAO
+
+ save_as_pb.py   - saves h5 file as frozen pb file first and then transforms that to a inference pb file
+                 - only inference pb file can be interpreted by OpenCV
+                 - parameters:
+                      - name: name of file, e.g. "cnn_1C_BN_[16]_[16_1]_mean_norm"
+                      - input_path: path to h5 file, e.g. 'h5_files/' + name + "1.h5"
+                      - pb_path: name of frozen file, e.g. name + "_frozen1.pb"
+                      - layer_num: name ending of CNN output layer
+                                   output layer name is also printed out by running this script
+                                   output layer name looks like this: 'activation_' + layer_num + '/Sigmoid'
+                                   depending on num of layer of your CNN model, this number has to be matched
+                                   output layer name needs to be set in the HULKs code Robotdetection.hpp,
+                                   so OpenCV can correctly recreate the model
+                      - inference_path: inference pb file path, e.g. 'pb_inference_files/' + name + '_inference1.pb'
+
+
+
+
